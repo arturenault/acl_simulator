@@ -1,0 +1,9 @@
+smb.faculty /home/smb
+smb.columbia
+sal.faculty /home/sal
+bollinger.columbia /home/bollinger
+suphannee.ta /home/suphannee
+.
+READ	smb.columbia	/home
+CREATE	smb.faculty	/home/smb/foo
+WRITE	bollinger.columbia	/tmp/low.library
