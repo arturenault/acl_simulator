@@ -10,7 +10,14 @@ class File {
   vector<File>        children_;
 
   public:
-  File(string n);
+  File(string name);
+  File& AddChild(string name);
+  File* GetChildByName(string name);
+
+  void AddPermission(string user,
+      string group,
+      bool can_read,
+      bool can_write);
 };
 
 #endif

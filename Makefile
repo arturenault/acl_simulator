@@ -3,7 +3,7 @@ default: acl_simulator
 
 CXX			= clang++
 CC			= clang++
-CXXFLAGS	= -g -Wall $(INCLUDES)
+CXXFLAGS	= -g -Wall --std=c++11 $(INCLUDES)
 LDFLAGS		= -g
 
 acl_simulator: acl_simulator.o acl_entry.o file.o

@@ -6,13 +6,13 @@ using namespace std;
 
 class AclEntry {
   public:
-    AclEntry(string u, string g, bool r, bool w);
+    AclEntry(string user, string group, bool can_read, bool can_write);
     bool can_read();
     bool can_write();
 
   private:
-    string user;
-    string group;
+    string user_;
+    string group_;
     bool can_read_;
     bool can_write_;
 };

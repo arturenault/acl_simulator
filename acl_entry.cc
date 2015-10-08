@@ -2,11 +2,14 @@
 
 using namespace std;
 
-AclEntry::AclEntry(string u, string g, bool r, bool w) :
-  user(u),
-  group(g),
-  can_read_(r),
-  can_write_(w)
+AclEntry::AclEntry(string user,
+                   string group,
+                   bool can_read,
+                   bool can_write) :
+  user_(user),
+  group_(group),
+  can_read_(can_read),
+  can_write_(can_write)
 {
 }
 
