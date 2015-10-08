@@ -6,9 +6,13 @@ CC			= clang++
 CXXFLAGS	= -g -Wall $(INCLUDES)
 LDFLAGS		= -g
 
-acl_simulator: acl_simulator.o
+acl_simulator: acl_simulator.o acl_entry.o file.o
 
-acl_simulator.o: acl_simulator.cc
+acl_simulator.o: acl_simulator.cc acl_entry.h file.h
+
+file.o: file.cc file.h acl_entry.h
+
+acl_entry.o: acl_entry.cc acl_entry.h
 
 .PHONY: clean
 clean:
