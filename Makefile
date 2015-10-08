@@ -1,18 +1,18 @@
 .PHONY: default
-default: acl_sim
+default: acl_simulator
 
 CXX			= clang++
 CC			= clang++
 CXXFLAGS	= -g -Wall $(INCLUDES)
 LDFLAGS		= -g
 
-acl_sim: acl_sim.o
+acl_simulator: acl_simulator.o
 
-acl_sim.o: acl_sim.cpp
+acl_simulator.o: acl_simulator.cc
 
 .PHONY: clean
 clean:
-	rm -f *.o acl_sim
+	rm -f *.o acl_simulator
 
 .PHONY: all
 all: clean default
