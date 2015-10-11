@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <iostream>
 #include <sstream>
+#include <map>
 #include <unordered_map>
 #include <unordered_set>
 #include "acl_entry.h"
@@ -20,7 +21,7 @@ const string kComponentPattern = "[a-z\\.]{1," + to_string(kMaxComponentLength) 
 
 unordered_map<string, unordered_set<string>> users;
 unordered_map<string, unordered_set<string>> groups;
-unordered_map<string, string> user_files;
+map<string, string> user_files;
 
 int main() {
   int line_no = 1;
@@ -43,6 +44,12 @@ int main() {
 
     // Get next line
     getline(cin, line);
+  }
+  
+  for (auto iter = user_files.begin();
+      iter != user_files.end();
+      ++iter) {
+    FindFile(iter->second)->AddPermission("*","*", true, false);
   }
 
   line_no = 1;
@@ -174,7 +181,7 @@ File *CreateUserFile(string filename, string user, string group) {
 
   if (next_file) {
     valid = false;
-    message = "File already belongs to another user";
+    message = "File already exists";
     return nullptr;
   } else {
     next_file = &file->AddChild(path[i]);
