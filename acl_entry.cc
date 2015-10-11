@@ -13,6 +13,14 @@ AclEntry::AclEntry(string user,
 {
 }
 
+const string& AclEntry::user() {
+  return this->user_;
+}
+
+const string& AclEntry::group() {
+  return this->group_;
+}
+
 bool AclEntry::can_read() {
   return this->can_read_;
 }

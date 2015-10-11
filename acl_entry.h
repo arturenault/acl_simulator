@@ -7,6 +7,8 @@ using namespace std;
 class AclEntry {
   public:
     AclEntry(string user, string group, bool can_read, bool can_write);
+    const string& user();
+    const string& group();
     bool can_read();
     bool can_write();
 

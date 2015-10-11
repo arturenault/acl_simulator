@@ -14,10 +14,16 @@ class File {
   File& AddChild(string name);
   File* GetChildByName(string name);
 
+  string name();
+  
   void AddPermission(string user,
       string group,
       bool can_read,
       bool can_write);
+  
+  bool HasPermission(string user,
+      string group,
+      bool write);
 };
 
 #endif
