@@ -3,6 +3,10 @@
 
 #include "file.h"
 
+void ProcessUserDeclaration(string declaration);
+
+File *FindFile(string filename);
+
 /* Create new file in user definition section */
 File *CreateUserFile(string user, string group, string filename);
 
