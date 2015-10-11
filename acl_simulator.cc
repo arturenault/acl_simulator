@@ -15,46 +15,44 @@ bool valid;
 string message;
 
 const int kMaxComponentLength = 16;
-const int kMaxFilenameLength  = 256;
+const int kMaxFilenameLength = 256;
 const string kNamePattern = "[a-z]+";
-const string kComponentPattern = "[a-z\\.]{1," + to_string(kMaxComponentLength) + "}";
+const string kComponentPattern =
+    "[a-z\\.]{1," + to_string(kMaxComponentLength) + "}";
 
 unordered_map<string, unordered_set<string>> users;
 unordered_map<string, unordered_set<string>> groups;
 map<string, string> user_files;
 
 int main() {
-  int line_no = 1;
-  File home = root.AddChild("home");
-  File tmp = root.AddChild("tmp");
-  home.AddPermission("*", "*", true, true);
-  tmp.AddPermission("*", "*", true, true);
-
   string line;
-  getline(cin, line);
+  int line_no = 1;
 
+  /* Create initial folders */
+  root.AddChild("home").AddPermission("*", "*", true, true);
+  root.AddChild("tmp").AddPermission("*", "*", true, true);
+
+  getline(cin, line);
   while (line != ".") {
     message = "";
     valid = true;
 
     ProcessUserDeclaration(line);
 
-    // Log output
-    cout << line_no++ << "\t" << (valid? "Y\t" : "X\t") << message << endl;
+    /* Log output */
+    cout << line_no++ << "\t" << (valid ? "Y\t" : "X\t") << message << endl;
 
-    // Get next line
     getline(cin, line);
   }
-  
-  for (auto iter = user_files.begin();
-      iter != user_files.end();
-      ++iter) {
-    FindFile(iter->second)->AddPermission("*","*", true, false);
+
+  /* Add *-* r to every user-file ACL */
+  for (auto iter = user_files.begin(); iter != user_files.end(); ++iter) {
+    FindFile(iter->second)->AddPermission("*", "*", true, false);
   }
 
   line_no = 1;
   while (!getline(cin, line).eof()) {
-    cout << line_no++ << "\tY\t" <<  line << endl;
+    cout << line_no++ << "\tY\t" << line << endl;
     // Do command stuff
   }
 }
@@ -64,10 +62,10 @@ void ProcessUserDeclaration(string declaration) {
   stringstream reader(declaration);
   regex name_regex(kNamePattern);
 
-  // Parse user info
-  getline(reader, user,   '.');
-  getline(reader, group,  ' ');
-  getline(reader, filename   );
+  // Parse command info
+  getline(reader, user, '.');
+  getline(reader, group, ' ');
+  getline(reader, filename);
 
   if (!regex_match(user, name_regex)) {
     message = "Invalid username";
@@ -87,8 +85,7 @@ void ProcessUserDeclaration(string declaration) {
     return;
   }
 
-  if (!users[user].empty() &&
-      !groups[group].empty()) {
+  if (!users[user].empty() && !groups[group].empty()) {
     message = "Duplicate user declaration";
     valid = false;
     return;
@@ -128,9 +125,7 @@ File *FindFile(string filename) {
     path.push_back(component);
   }
 
-  for (auto iter = path.begin();
-      iter != path.end();
-      ++iter) {
+  for (auto iter = path.begin(); iter != path.end(); ++iter) {
     file = file->GetChildByName(*iter);
     if (!file) {
       return nullptr;
@@ -151,15 +146,15 @@ File *CreateUserFile(string filename, string user, string group) {
   getline(stream, component, '/');
 
   if (!component.empty()) {
-    valid   = false;
+    valid = false;
     message = "All filenames must begin with /";
     return nullptr;
   }
 
   while (stream.peek() != EOF) {
     getline(stream, component, '/');
-    if(!regex_match(component, component_regex)) {
-      valid   = false;
+    if (!regex_match(component, component_regex)) {
+      valid = false;
       message = "Invalid component name";
       return nullptr;
     }
@@ -167,7 +162,7 @@ File *CreateUserFile(string filename, string user, string group) {
   }
 
   int i;
-  for (i = 0; i < path.size()-1; ++i) {
+  for (i = 0; i < path.size() - 1; ++i) {
     next_file = file->GetChildByName(path[i]);
     /* File doesn't exist yet; create it. */
     if (!next_file) {
@@ -201,7 +196,7 @@ File *Create(string user, string group, string filename) {
   getline(stream, component, '/');
 
   if (!component.empty()) {
-    valid   = false;
+    valid = false;
     message = "All filenames must begin with /";
     return nullptr;
   }
@@ -218,21 +213,26 @@ File *Create(string user, string group, string filename) {
     file = file->GetChildByName(path[i]);
 
     if (!file) {
-      valid   = false;
-      message = "All components in the path must exist before creating a new one";
+      valid = false;
+      message =
+          "All components in the path must exist before creating a new one";
       return nullptr;
     }
 
-    if (i < path.size() - 2) { 
+    if (i < path.size() - 2) {
       if (!file->HasPermission(user, group, false)) {
         valid = false;
-        message = "Read permissions on all components in the path are needed to reach a file";
+        message =
+            "Read permissions on all components in the path are needed to "
+            "reach a file";
         return nullptr;
       }
     } else {
       if (!file->HasPermission(user, group, true)) {
         valid = false;
-        message = "Write permission on the parent component is needed to create a file";
+        message =
+            "Write permission on the parent component is needed to create a "
+            "file";
         return nullptr;
       }
     }

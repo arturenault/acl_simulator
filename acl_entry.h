@@ -5,18 +5,18 @@
 using namespace std;
 
 class AclEntry {
-  public:
-    AclEntry(string user, string group, bool can_read, bool can_write);
-    const string& user();
-    const string& group();
-    bool can_read();
-    bool can_write();
+ public:
+  AclEntry(string user, string group, bool can_read, bool can_write);
+  const string& user();
+  const string& group();
+  bool can_read();
+  bool can_write();
 
-  private:
-    string user_;
-    string group_;
-    bool can_read_;
-    bool can_write_;
+ private:
+  string user_;
+  string group_;
+  bool can_read_;
+  bool can_write_;
 };
 
 #endif
