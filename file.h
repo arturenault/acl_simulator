@@ -15,6 +15,7 @@ class File {
 
   File& AddChild(string name);
   File& AddChild(File& file);
+  bool DeleteChild(string name);
 
   File* GetChildByName(string name);
 
@@ -24,6 +25,7 @@ class File {
   void AddPermission(string user, string group, bool can_read, bool can_write);
 
   bool HasPermission(string user, string group, bool write);
+  bool HasChildren();
 
   string ToString();
 };

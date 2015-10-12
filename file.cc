@@ -18,6 +18,17 @@ File& File::AddChild(File& file) {
   return this->children_.back();
 }
 
+bool File::DeleteChild(string name) {
+  for (auto iter = this->children_.begin(); iter != this->children_.end();
+       ++iter) {
+    if (iter->name_ == name) {
+      this->children_.erase(iter);
+      return true;
+    }
+  }
+  return false;
+}
+
 File* File::GetChildByName(string name) {
   for (auto iter = this->children_.begin(); iter != this->children_.end();
        ++iter) {
@@ -48,6 +59,8 @@ bool File::HasPermission(string user, string group, bool write) {
   }
   return false;
 }
+
+bool File::HasChildren() { return children_.size() != 0; }
 
 string File::ToString() {
   string output;

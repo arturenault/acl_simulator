@@ -153,6 +153,7 @@ void ProcessCommand(string line) {
   } else if (operation == "CREATE") {
     Create(user, group, filename);
   } else if (operation == "DELETE") {
+    Delete(user, group, filename);
   } else if (operation == "ACL") {
   } else {
     valid = false;
@@ -372,7 +373,7 @@ File *Create(string user, string group, string filename) {
     }
   }
 
-  File new_file(path[path.size() - 1]);
+  File new_file(path.back());
 
   ProcessAcl(new_file);
 
@@ -380,6 +381,76 @@ File *Create(string user, string group, string filename) {
     return &file->AddChild(new_file);
   else
     return nullptr;
+}
+
+/* User create command */
+void Delete(string user, string group, string filename) {
+  string component;
+  vector<string> path;
+  stringstream stream(filename);
+  File *file = &root;
+
+  getline(stream, component, '/');
+
+  if (!component.empty()) {
+    valid = false;
+    message = "File not found: all filenames begin with /";
+  } else {
+    while (stream.peek() != EOF) {
+      getline(stream, component, '/');
+      path.push_back(component);
+    }
+
+    /* Path.size - 1 because we don't care about it just yet */
+    int i;
+    for (i = 0; i < path.size() - 1; ++i) {
+      file = file->GetChildByName(path[i]);
+
+      if (!file) {
+        valid = false;
+        message =
+            "File not found: all components in the path must exist before "
+            "creating a new one";
+        return;
+      }
+
+      if (i < path.size() - 2) {
+        if (!file->HasPermission(user, group, false)) {
+          permitted = false;
+          message =
+              "Permission denied: permissions on all components in the path "
+              "are needed to "
+              "reach a file";
+          return;
+        }
+      } else {
+        if (!file->HasPermission(user, group, true)) {
+          permitted = false;
+          cout << file->ToString() << endl;
+          message =
+              "Permission denied: Write permission on the parent component is "
+              "needed to delete a "
+              "file";
+          return;
+        }
+      }
+    }
+  }
+
+  File *delete_file = file->GetChildByName(path.back());
+  if (!delete_file) {
+    valid = false;
+    message = "File not found";
+    return;
+  } else {
+    if (delete_file->HasChildren()) {
+      permitted = false;
+      message = "Cannot delete a file that has children";
+      return;
+    } else {
+      file->DeleteChild(path.back());
+    }
+  }
 }
 
 void ProcessAcl(File &new_file) {
