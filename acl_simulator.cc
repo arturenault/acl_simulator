@@ -155,6 +155,7 @@ void ProcessCommand(string line) {
   } else if (operation == "DELETE") {
     Delete(user, group, filename);
   } else if (operation == "ACL") {
+    Acl(user, group, filename);
   } else {
     valid = false;
     message = "Invalid operation";
@@ -311,7 +312,6 @@ void Write(string user, string group, string filename) {
     file = file->GetChildByName(path[i]);
     if (!file->HasPermission(user, group, true)) {
       permitted = false;
-      cout << file->ToString() << endl;
       message = "Permission denied: cannot write to file";
       return;
     }
@@ -362,7 +362,6 @@ File *Create(string user, string group, string filename) {
       } else {
         if (!file->HasPermission(user, group, true)) {
           permitted = false;
-          cout << file->ToString() << endl;
           message =
               "Permission denied: Write permission on the parent component is "
               "needed to create a "
@@ -375,15 +374,15 @@ File *Create(string user, string group, string filename) {
 
   File new_file(path.back());
 
-  ProcessAcl(new_file);
+  new_file.set_permissions(ProcessAcl());
 
-  if (valid)
+  if (valid && permitted)
     return &file->AddChild(new_file);
   else
     return nullptr;
 }
 
-/* User create command */
+/* User Delete command */
 void Delete(string user, string group, string filename) {
   string component;
   vector<string> path;
@@ -426,7 +425,6 @@ void Delete(string user, string group, string filename) {
       } else {
         if (!file->HasPermission(user, group, true)) {
           permitted = false;
-          cout << file->ToString() << endl;
           message =
               "Permission denied: Write permission on the parent component is "
               "needed to delete a "
@@ -453,15 +451,72 @@ void Delete(string user, string group, string filename) {
   }
 }
 
-void ProcessAcl(File &new_file) {
-  string line, user, group, permissions;
+void Acl(string user, string group, string filename) {
+  string component;
+  vector<string> path;
+  stringstream stream(filename);
+  File *file = &root;
+
+  getline(stream, component, '/');
+
+  if (!component.empty()) {
+    valid = false;
+    message = "File not found: all filenames begin with /";
+  } else {
+    while (stream.peek() != EOF) {
+      getline(stream, component, '/');
+      path.push_back(component);
+    }
+
+    /* Path.size - 1 because the last file doesn't need read permissions. */
+    int i;
+    for (i = 0; i < path.size() - 1; ++i) {
+      file = file->GetChildByName(path[i]);
+
+      if (!file) {
+        valid = false;
+        message = "File not found: cannot reach file.";
+        break;
+      }
+
+      if (!file->HasPermission(user, group, false)) {
+        permitted = false;
+        message =
+            "Permission denied: permissions on all components in the path "
+            "are needed to "
+            "reach a file";
+        break;
+      }
+    }
+  }
+
+  file = file->GetChildByName(path.back());
+
+  if (!file) {
+    valid = false;
+    message = "File not found";
+  } else if (!file->HasPermission(user, group, true)) {
+    permitted = false;
+    message =
+        "Permission denied: Write permission is needed for the ACL command";
+  }
+
+  vector<AclEntry> acl = ProcessAcl();
+
+  if (valid && permitted) file->set_permissions(acl);
+}
+
+vector<AclEntry> ProcessAcl() {
+  string line;
+  vector<AclEntry> acl;
   regex name_regex(kNamePattern), permission_regex(kPermissionPattern);
   bool can_read, can_write;
 
   getline(cin, line);
 
   while (line != ".") {
-    if (valid) {
+    string user, group, permissions;
+    if (valid && permitted) {
       stringstream stream(line);
 
       getline(stream, user, '.');
@@ -501,8 +556,9 @@ void ProcessAcl(File &new_file) {
       can_read = permissions.find('r') != string::npos;
       can_write = permissions.find('w') != string::npos;
 
-      new_file.AddPermission(user, group, can_read, can_write);
+      acl.push_back(AclEntry(user, group, can_read, can_write));
     }
     getline(cin, line);
   }
+  return acl;
 }

@@ -11,9 +11,6 @@ File& File::AddChild(string name) {
 
 File& File::AddChild(File& file) {
   file.parent_ = this;
-  if (file.permissions_.empty()) {
-    file.permissions_ = this->permissions_;
-  }
   this->children_.push_back(file);
   return this->children_.back();
 }
@@ -47,6 +44,13 @@ void File::AddPermission(string user, string group, bool can_read,
                          bool can_write) {
   AclEntry new_entry(user, group, can_read, can_write);
   this->permissions_.push_back(new_entry);
+}
+
+void File::set_permissions(vector<AclEntry> acl) {
+  if (acl.empty())
+    this->permissions_ = parent_->permissions_;
+  else
+    this->permissions_ = acl;
 }
 
 bool File::HasPermission(string user, string group, bool write) {

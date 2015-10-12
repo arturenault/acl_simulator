@@ -14,5 +14,6 @@ smb.faculty rw
 *.faculty r
 bollinger.columbia rw
 .
-DELETE smb.faculty /home/smb/fob
-WRITE smb.columbia /home/smb
+ACL sal.faculty /home/smb/foo/bar
+sal.columbia rw
+.

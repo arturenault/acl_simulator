@@ -19,8 +19,10 @@ File *Create(string user, string group, string filename);
 
 void Delete(string user, string group, string filename);
 
+void Acl(string user, string group, string filename);
+
 void ProcessCommand(string command);
 
-void ProcessAcl(File &new_file);
+vector<AclEntry> ProcessAcl();
 
 #endif

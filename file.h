@@ -23,6 +23,7 @@ class File {
   File* parent();
 
   void AddPermission(string user, string group, bool can_read, bool can_write);
+  void set_permissions(vector<AclEntry> acl);
 
   bool HasPermission(string user, string group, bool write);
   bool HasChildren();
