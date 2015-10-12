@@ -48,14 +48,19 @@ int main() {
 
   /* Add *-* r to every user-file ACL */
   for (auto iter = user_files.begin(); iter != user_files.end(); ++iter) {
-    FindFile(iter->second)->AddPermission("*", "*", true, false);
+    File *file = FindFile(iter->second);
+    file->AddPermission("*", "*", true, false);
   }
 
   line_no = 1;
   while (!getline(cin, line).eof()) {
+    message = "";
+    valid = true;
+    permitted = true;
+
     ProcessCommand(line);
-    cout << line_no++ << (valid ? permitted ? "\tY\t" : "\tN\t" : "\tX\t")
-         << line << endl;
+    cout << line_no++ << (valid ? (permitted ? "\tY\t" : "\tN\t") : "\tX\t")
+         << line << "\t" << message << endl;
   }
 }
 
@@ -123,9 +128,22 @@ void ProcessCommand(string line) {
   getline(stream, group, ' ');
   getline(stream, filename);
 
+  if (users[user].empty()) {
+    valid = false;
+    message = "User does not exist";
+    return;
+  }
+
+  if (groups[group].empty()) {
+    valid = false;
+    message = "Group does not exist";
+    return;
+  }
+
   if (operation == "READ") {
   } else if (operation == "WRITE") {
   } else if (operation == "CREATE") {
+    Create(user, group, filename);
   } else if (operation == "DELETE") {
   } else if (operation == "ACL") {
   } else {
@@ -203,7 +221,7 @@ File *CreateUserFile(string filename, string user, string group) {
     return nullptr;
   } else {
     next_file = &file->AddChild(path[i]);
-    file->AddPermission(user, group, true, true);
+    next_file->AddPermission(user, group, true, true);
   }
 
   return next_file;
@@ -221,52 +239,54 @@ File *Create(string user, string group, string filename) {
   if (!component.empty()) {
     valid = false;
     message = "All filenames must begin with /";
-    return nullptr;
-  }
-
-  while (stream.peek() != EOF) {
-    getline(stream, component, '/');
-    path.push_back(component);
-  }
-
-  /* Path.size - 1 because the last file doesn't have
-   * to exist yet. */
-  int i;
-  for (i = 0; i < path.size() - 1; ++i) {
-    file = file->GetChildByName(path[i]);
-
-    if (!file) {
-      valid = false;
-      message =
-          "All components in the path must exist before creating a new one";
-      return nullptr;
+  } else {
+    while (stream.peek() != EOF) {
+      getline(stream, component, '/');
+      path.push_back(component);
     }
 
-    if (i < path.size() - 2) {
-      if (!file->HasPermission(user, group, false)) {
+    /* Path.size - 1 because the last file doesn't have
+     * to exist yet. */
+    int i;
+    for (i = 0; i < path.size() - 1; ++i) {
+      file = file->GetChildByName(path[i]);
+
+      if (!file) {
         valid = false;
         message =
-            "Read permissions on all components in the path are needed to "
-            "reach a file";
-        return nullptr;
+            "All components in the path must exist before creating a new one";
+        break;
       }
-    } else {
-      if (!file->HasPermission(user, group, true)) {
-        valid = false;
-        message =
-            "Write permission on the parent component is needed to create a "
-            "file";
-        return nullptr;
+
+      if (i < path.size() - 2) {
+        if (!file->HasPermission(user, group, false)) {
+          permitted = false;
+          message =
+              "Read permissions on all components in the path are needed to "
+              "reach a file";
+          break;
+        }
+      } else {
+        if (!file->HasPermission(user, group, true)) {
+          permitted = false;
+          cout << file->ToString() << endl;
+          message =
+              "Write permission on the parent component is needed to create a "
+              "file";
+          break;
+        }
       }
     }
   }
 
-  File new_file(path[i]);
+  File new_file(path[path.size() - 1]);
 
   ProcessAcl(new_file);
 
-  if (valid) return &file->AddChild(new_file);
-  else return nullptr;
+  if (valid)
+    return &file->AddChild(new_file);
+  else
+    return nullptr;
 }
 
 void ProcessAcl(File &new_file) {
@@ -277,47 +297,48 @@ void ProcessAcl(File &new_file) {
   getline(cin, line);
 
   while (line != ".") {
-    stringstream stream(line);
+    if (valid) {
+      stringstream stream(line);
 
-    getline(stream, user, '.');
-    getline(stream, group, ' ');
-    getline(stream, permissions);
+      getline(stream, user, '.');
+      getline(stream, group, ' ');
+      getline(stream, permissions);
 
-    /* User doesn't exist yet */
-    if (users[user].empty()) {
-      if (!regex_match(user, name_regex)) {
-        valid = false;
-        message = "Invalid username";
-        return;
+      /* User doesn't exist yet */
+      if (user != "*" && users[user].empty()) {
+        if (!regex_match(user, name_regex)) {
+          valid = false;
+          message = "Invalid username in ACL";
+          continue;
+        }
+
+        users[user].insert(group);
+        groups[group].insert(user);
       }
 
-      users[user].insert(group);
-      groups[group].insert(user);
-    }
+      /* Group doesn't exist yet */
+      if (group != "*" && groups[group].empty()) {
+        if (!regex_match(group, name_regex)) {
+          valid = false;
+          message = "Invalid group name in ACL";
+          continue;
+        }
 
-    /* Group doesn't exist yet */
-    if (groups[group].empty()) {
-      if (!regex_match(group, name_regex)) {
-        valid = false;
-        message = "Invalid group name";
-        return;
+        users[user].insert(group);
+        groups[group].insert(user);
       }
 
-      users[user].insert(group);
-      groups[group].insert(user);
+      if (!regex_match(permissions, permission_regex)) {
+        valid = false;
+        message = "Invalid permissions";
+        continue;
+      }
+
+      can_read = permissions.find('r') != string::npos;
+      can_write = permissions.find('w') != string::npos;
+
+      new_file.AddPermission(user, group, can_read, can_write);
     }
-
-    if (!regex_match(permissions, permission_regex)) {
-      valid = false;
-      message = "Invalid permissions";
-      return;
-    }
-
-    can_read = permissions.find('r') != string::npos;
-    can_write = permissions.find('w') != string::npos;
-
-    new_file.AddPermission(user, group, can_read, can_write);
-
     getline(cin, line);
   }
 }
