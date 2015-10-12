@@ -9,5 +9,9 @@ CREATE smb.faculty /home/smb/foo
 smb.faculty rw
 *.faculty r
 .
-WRITE bollinger.columbia /tmp/low.library
-READ bollinger.faculty /home/smb/foo
+CREATE smb.faculty /home/smb/foo/bar
+smb.faculty rw
+*.faculty r
+bollinger.columbia rw
+.
+WRITE smb.columbia /home/smb

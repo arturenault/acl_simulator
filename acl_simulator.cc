@@ -116,7 +116,7 @@ void ProcessUserDeclaration(string declaration) {
     } else {
       users[user].insert(group);
       groups[group].insert(user);
-      FindFile(filename)->AddPermission(user, group, true, true);
+      FindFile(user_files[user])->AddPermission(user, group, true, true);
     }
   }
 }
@@ -149,6 +149,7 @@ void ProcessCommand(string line) {
   if (operation == "READ") {
     Read(user, group, filename);
   } else if (operation == "WRITE") {
+    Write(user, group, filename);
   } else if (operation == "CREATE") {
     Create(user, group, filename);
   } else if (operation == "DELETE") {
@@ -258,15 +259,60 @@ void Read(string user, string group, string filename) {
 
       if (!file) {
         valid = false;
-        message = "File not found";
+        message = "File not found: all files in path must exist";
         break;
       }
 
       if (!file->HasPermission(user, group, false)) {
         permitted = false;
-        message = "Permission denied";
+        message = "Permission denied: cannot read file";
         break;
       }
+    }
+  }
+}
+
+/* User write command */
+void Write(string user, string group, string filename) {
+  string component;
+  vector<string> path;
+  stringstream stream(filename);
+  File *file = &root;
+
+  getline(stream, component, '/');
+
+  if (!component.empty()) {
+    valid = false;
+    message = "File not found: all filenames begin with /";
+  } else {
+    while (stream.peek() != EOF) {
+      getline(stream, component, '/');
+      path.push_back(component);
+    }
+
+    int i;
+    for (i = 0; i < path.size() - 1; ++i) {
+      file = file->GetChildByName(path[i]);
+
+      if (!file) {
+        valid = false;
+        message = "File not found: all files in path must exist";
+        return;
+      }
+
+      if (!file->HasPermission(user, group, false)) {
+        permitted = false;
+        message = "Permission denied: cannot access file";
+        return;
+      }
+    }
+
+    file = file->GetChildByName(path[i]);
+    if (!file->HasPermission(user, group, true)) {
+      permitted = false;
+      cout << file->ToString() << endl;
+      message = "Permission denied: cannot write to file";
+      return;
     }
   }
 }
@@ -282,7 +328,7 @@ File *Create(string user, string group, string filename) {
 
   if (!component.empty()) {
     valid = false;
-    message = "All filenames must begin with /";
+    message = "File not found: all filenames begin with /";
   } else {
     while (stream.peek() != EOF) {
       getline(stream, component, '/');
@@ -298,7 +344,8 @@ File *Create(string user, string group, string filename) {
       if (!file) {
         valid = false;
         message =
-            "All components in the path must exist before creating a new one";
+            "File not found: all components in the path must exist before "
+            "creating a new one";
         break;
       }
 
@@ -306,7 +353,8 @@ File *Create(string user, string group, string filename) {
         if (!file->HasPermission(user, group, false)) {
           permitted = false;
           message =
-              "Read permissions on all components in the path are needed to "
+              "Permission denied: permissions on all components in the path "
+              "are needed to "
               "reach a file";
           break;
         }
@@ -315,7 +363,8 @@ File *Create(string user, string group, string filename) {
           permitted = false;
           cout << file->ToString() << endl;
           message =
-              "Write permission on the parent component is needed to create a "
+              "Permission denied: Write permission on the parent component is "
+              "needed to create a "
               "file";
           break;
         }
