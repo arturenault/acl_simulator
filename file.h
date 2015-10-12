@@ -24,8 +24,10 @@ class File {
 
   void AddPermission(string user, string group, bool can_read, bool can_write);
   void set_permissions(vector<AclEntry> acl);
+  void CopyPermissionsFromParent();
 
   bool HasPermission(string user, string group, bool write);
+  bool HasPermissions();
   bool HasChildren();
 
   string ToString();

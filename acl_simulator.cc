@@ -34,7 +34,7 @@ int main() {
   root.AddChild("tmp").AddPermission("*", "*", true, true);
 
   getline(cin, line);
-  while (line != ".") {
+  while (line != "." && !cin.eof()) {
     message = "";
     valid = true;
 
@@ -372,14 +372,20 @@ File *Create(string user, string group, string filename) {
     }
   }
 
-  File new_file(path.back());
+  File *new_file = &file->AddChild(path.back());
 
-  new_file.set_permissions(ProcessAcl());
+  ProcessAcl(*new_file);
 
-  if (valid && permitted)
-    return &file->AddChild(new_file);
-  else
+  if (valid && permitted) {
+    if (!new_file->HasPermissions()) {
+      new_file->CopyPermissionsFromParent();
+    }
+    return new_file;
+  }
+  else {
+    file->DeleteChild(path.back());
     return nullptr;
+  }
 }
 
 /* User Delete command */
@@ -501,14 +507,15 @@ void Acl(string user, string group, string filename) {
         "Permission denied: Write permission is needed for the ACL command";
   }
 
-  vector<AclEntry> acl = ProcessAcl();
+  File file_backup = *file;
 
-  if (valid && permitted) file->set_permissions(acl);
+  ProcessAcl(*file);
+
+  if (!valid || !permitted) *file = file_backup;
 }
 
-vector<AclEntry> ProcessAcl() {
+void ProcessAcl(File &new_file) {
   string line;
-  vector<AclEntry> acl;
   regex name_regex(kNamePattern), permission_regex(kPermissionPattern);
   bool can_read, can_write;
 
@@ -556,9 +563,8 @@ vector<AclEntry> ProcessAcl() {
       can_read = permissions.find('r') != string::npos;
       can_write = permissions.find('w') != string::npos;
 
-      acl.push_back(AclEntry(user, group, can_read, can_write));
+      new_file.AddPermission(user, group, can_read, can_write);
     }
     getline(cin, line);
   }
-  return acl;
 }

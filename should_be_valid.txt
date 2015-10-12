@@ -1,0 +1,19 @@
+smb.columbia /home/smb
+smb.faculty
+.
+READ smb.columbia /home/smb
+READ smb.columbia /home/smb
+WRITE smb.columbia /home/smb
+READ smb.faculty /home/smb
+WRITE smb.faculty /home/smb
+CREATE smb.columbia /home/smb/hw
+smb.* rw
+.
+DELETE smb.columbia /home/smb/hw
+CREATE smb.columbia /home/smb/hw
+.
+READ smb.faculty /home/smb/hw
+WRITE smb.faculty /home/smb/hw
+ACL smb.columbia /home/smb/hw
+smb.columbia rw
+.

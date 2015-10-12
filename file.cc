@@ -47,10 +47,17 @@ void File::AddPermission(string user, string group, bool can_read,
 }
 
 void File::set_permissions(vector<AclEntry> acl) {
-  if (acl.empty())
-    this->permissions_ = parent_->permissions_;
-  else
-    this->permissions_ = acl;
+  // I have no idea why, but acl.empty() didn't work here.
+  if (acl.size() == 0) {
+    permissions_ = parent_->permissions_;
+  } else
+    permissions_ = acl;
+}
+
+void File::CopyPermissionsFromParent() {
+  for(auto iter = parent_->permissions_.begin(); iter != parent_->permissions_.end(); iter++) {
+    this->AddPermission(iter->user(), iter->group(), iter->can_read(), iter->can_write());
+  }
 }
 
 bool File::HasPermission(string user, string group, bool write) {
@@ -63,6 +70,8 @@ bool File::HasPermission(string user, string group, bool write) {
   }
   return false;
 }
+
+bool File::HasPermissions() { return permissions_.size() != 0; }
 
 bool File::HasChildren() { return children_.size() != 0; }
 

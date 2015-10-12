@@ -23,6 +23,6 @@ void Acl(string user, string group, string filename);
 
 void ProcessCommand(string command);
 
-vector<AclEntry> ProcessAcl();
+void ProcessAcl(File &new_file);
 
 #endif
