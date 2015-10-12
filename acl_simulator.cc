@@ -1,4 +1,3 @@
-#include <regex>
 #include <cstdio>
 #include <iostream>
 #include <sstream>
@@ -11,14 +10,12 @@
 using namespace std;
 
 File root("");
+File dummy("");
 bool valid, permitted;
 string message;
 
 const int kMaxComponentLength = 16;
 const int kMaxFilenameLength = 256;
-const string kNamePattern = "[a-z]+";
-const string kComponentPattern =
-    "[a-z\\.]{1," + to_string(kMaxComponentLength) + "}";
 const string kPermissionPattern = "^(r|w|rw|-)$";
 
 unordered_map<string, unordered_set<string>> users;
@@ -67,20 +64,19 @@ int main() {
 void ProcessUserDeclaration(string declaration) {
   string user, group, filename;
   stringstream reader(declaration);
-  regex name_regex(kNamePattern);
 
   // Parse command info
   getline(reader, user, '.');
   getline(reader, group, ' ');
   getline(reader, filename);
 
-  if (!regex_match(user, name_regex)) {
+  if (!IsValidName(user)) {
     message = "Invalid username";
     valid = false;
     return;
   }
 
-  if (!regex_match(group, name_regex)) {
+  if (!IsValidName(group)) {
     message = "Invalid group name";
     valid = false;
     return;
@@ -188,7 +184,6 @@ File *FindFile(string filename) {
 /* Create new file in user definition section */
 File *CreateUserFile(string filename, string user, string group) {
   string component;
-  regex component_regex(kComponentPattern);
   vector<string> path;
   stringstream stream(filename);
   File *file = &root;
@@ -204,7 +199,7 @@ File *CreateUserFile(string filename, string user, string group) {
 
   while (stream.peek() != EOF) {
     getline(stream, component, '/');
-    if (!regex_match(component, component_regex)) {
+    if (!IsValidComponent(component)) {
       valid = false;
       message = "Invalid component name";
       return nullptr;
@@ -329,7 +324,6 @@ File *Create(string user, string group, string filename) {
   vector<string> path;
   stringstream stream(filename);
   File *file = &root;
-  regex component_regex(kComponentPattern);
 
   getline(stream, component, '/');
 
@@ -372,7 +366,7 @@ File *Create(string user, string group, string filename) {
         }
       } else {
         if (!file->HasPermission(user, group, true)) {
-         // cout << file->ToString() << endl;
+          // cout << file->ToString() << endl;
           permitted = false;
           message =
               "Permission denied: Write permission on the parent component is "
@@ -388,7 +382,7 @@ File *Create(string user, string group, string filename) {
     }
   }
 
-  if (!regex_match(path.back(), component_regex)) {
+  if (!IsValidComponent(path.back())) {
     valid = false;
     message = "Invalid component name";
   }
@@ -402,8 +396,7 @@ File *Create(string user, string group, string filename) {
       new_file->CopyPermissionsFromParent();
     }
     return new_file;
-  }
-  else {
+  } else {
     file->DeleteChild(path.back());
     return nullptr;
   }
@@ -520,6 +513,7 @@ void Acl(string user, string group, string filename) {
   file = file->GetChildByName(path.back());
 
   if (!file) {
+    file = &dummy;
     valid = false;
     message = "File not found";
   } else if (!file->HasPermission(user, group, true)) {
@@ -529,11 +523,12 @@ void Acl(string user, string group, string filename) {
   }
 
   File file_backup = *file;
-
   file->ClearPermissions();
+
   ProcessAcl(*file);
-  
-  if (!valid || !permitted) *file = file_backup;
+
+  if (!valid || !permitted)
+    *file = file_backup;
   else if (!file->HasPermissions()) {
     file->CopyPermissionsFromParent();
   }
@@ -541,7 +536,6 @@ void Acl(string user, string group, string filename) {
 
 void ProcessAcl(File &new_file) {
   string line;
-  regex name_regex(kNamePattern), permission_regex(kPermissionPattern);
   bool can_read, can_write;
 
   getline(cin, line);
@@ -557,7 +551,7 @@ void ProcessAcl(File &new_file) {
 
       /* User doesn't exist yet */
       if (user != "*" && users[user].empty()) {
-        if (!regex_match(user, name_regex)) {
+        if (!IsValidName(user)) {
           valid = false;
           message = "Invalid username in ACL";
           continue;
@@ -569,7 +563,7 @@ void ProcessAcl(File &new_file) {
 
       /* Group doesn't exist yet */
       if (group != "*" && groups[group].empty()) {
-        if (!regex_match(group, name_regex)) {
+        if (!IsValidName(group)) {
           valid = false;
           message = "Invalid group name in ACL";
           continue;
@@ -579,7 +573,7 @@ void ProcessAcl(File &new_file) {
         groups[group].insert(user);
       }
 
-      if (!regex_match(permissions, permission_regex)) {
+      if (!IsValidPermission(permissions)) {
         valid = false;
         message = "Invalid permissions";
         continue;
@@ -592,4 +586,32 @@ void ProcessAcl(File &new_file) {
     }
     getline(cin, line);
   }
+}
+
+bool IsValidName(string name) {
+  if (name.length() == 0) return false;
+
+  for (auto iter = name.cbegin(); iter != name.cend(); ++iter) {
+    if (!islower(*iter)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+bool IsValidComponent(string name) {
+  if (name.length() == 0 || name.length() > kMaxComponentLength) return false;
+
+  for (auto iter = name.cbegin(); iter != name.cend(); ++iter) {
+    if (!islower(*iter) && *iter != '.') {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+bool IsValidPermission(string name) {
+  return name == "r" || name == "w" || name == "rw" || name == "-";
 }

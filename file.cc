@@ -46,13 +46,13 @@ void File::AddPermission(string user, string group, bool can_read,
   this->permissions_.push_back(new_entry);
 }
 
-void File::ClearPermissions() {
-  permissions_.clear();
-}
+void File::ClearPermissions() { permissions_.clear(); }
 
 void File::CopyPermissionsFromParent() {
-  for(auto iter = parent_->permissions_.begin(); iter != parent_->permissions_.end(); iter++) {
-    this->AddPermission(iter->user(), iter->group(), iter->can_read(), iter->can_write());
+  for (auto iter = parent_->permissions_.begin();
+       iter != parent_->permissions_.end(); iter++) {
+    this->AddPermission(iter->user(), iter->group(), iter->can_read(),
+                        iter->can_write());
   }
 }
 
