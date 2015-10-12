@@ -10,6 +10,8 @@ File *FindFile(string filename);
 /* Create new file in user definition section */
 File *CreateUserFile(string user, string group, string filename);
 
+void Read(string user, string group, string filename);
+
 /* Create file as a user */
 File *Create(string user, string group, string filename);
 

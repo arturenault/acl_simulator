@@ -114,6 +114,8 @@ void ProcessUserDeclaration(string declaration) {
       message = "First reference to a username must include a filename";
       valid = false;
     } else {
+      users[user].insert(group);
+      groups[group].insert(user);
       FindFile(filename)->AddPermission(user, group, true, true);
     }
   }
@@ -132,6 +134,10 @@ void ProcessCommand(string line) {
     valid = false;
     message = "User does not exist";
     return;
+  } else if (users[user].find(group) == users[user].end()) {
+    permitted = false;
+    message = "User is not part of given group";
+    return;
   }
 
   if (groups[group].empty()) {
@@ -141,6 +147,7 @@ void ProcessCommand(string line) {
   }
 
   if (operation == "READ") {
+    Read(user, group, filename);
   } else if (operation == "WRITE") {
   } else if (operation == "CREATE") {
     Create(user, group, filename);
@@ -225,6 +232,43 @@ File *CreateUserFile(string filename, string user, string group) {
   }
 
   return next_file;
+}
+
+/* User read command */
+void Read(string user, string group, string filename) {
+  string component;
+  vector<string> path;
+  stringstream stream(filename);
+  File *file = &root;
+
+  getline(stream, component, '/');
+
+  if (!component.empty()) {
+    valid = false;
+    message = "All filenames must begin with /";
+  } else {
+    while (stream.peek() != EOF) {
+      getline(stream, component, '/');
+      path.push_back(component);
+    }
+
+    int i;
+    for (i = 0; i < path.size(); ++i) {
+      file = file->GetChildByName(path[i]);
+
+      if (!file) {
+        valid = false;
+        message = "File not found";
+        break;
+      }
+
+      if (!file->HasPermission(user, group, false)) {
+        permitted = false;
+        message = "Permission denied";
+        break;
+      }
+    }
+  }
 }
 
 /* User create command */
