@@ -1,0 +1,34 @@
+SMB.columbia /home/smb
+smb.COLUMBIA /home/smb
+smb.columbia
+smb.columbia /home/smb
+aho.columbia /home/smb
+aho.columbia /home/aho
+.
+READ smb.nyu /home/smb
+READ smb.columbia /blah/smb
+READ smb.columbia /home/smb/nothing
+CREATE smb.columbia /blah
+.
+CREATE smb.columbia /home/smb
+.
+CREATE smb.columbia /home/smb/aho_gossip
+smb.columbia rw
+.
+CREATE smb.columbia /home/smb/aho.gossip
+smb.columbia rw
+.
+READ aho.columbia /home/smb/aho.gossip
+WRITE aho.columbia /home/aho/smb.gossip
+ACL smb.columbia /home/smb/aho.gossip
+junk
+.
+READ smb.columbia /home/smb/aho.gossip
+ACL smb.columbia /home/smb/aho.gossip
+.
+READ aho.columbia /home/smb/aho.gossip
+CREATE smb.columbia /home/smb/aho.gossip/secrets
+.
+DELETE smb.columbia /home/smb/aho.gossip
+DELETE smb.columbia /home/smb/aho.gossip/secrets
+DELETE smb.columbia /home/smb/aho.gossip

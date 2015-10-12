@@ -1,5 +1,6 @@
 smb.columbia /home/smb
 smb.faculty
+aho.faculty /home/faculty/aho
 .
 READ smb.columbia /home/smb
 READ smb.columbia /home/smb

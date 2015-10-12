@@ -16,10 +16,10 @@ File& File::AddChild(File& file) {
 }
 
 bool File::DeleteChild(string name) {
-  for (auto iter = this->children_.begin(); iter != this->children_.end();
+  for (auto iter = this->children_.rbegin(); iter != this->children_.rend();
        ++iter) {
     if (iter->name_ == name) {
-      this->children_.erase(iter);
+      this->children_.erase(--(iter.base()));
       return true;
     }
   }
@@ -46,12 +46,8 @@ void File::AddPermission(string user, string group, bool can_read,
   this->permissions_.push_back(new_entry);
 }
 
-void File::set_permissions(vector<AclEntry> acl) {
-  // I have no idea why, but acl.empty() didn't work here.
-  if (acl.size() == 0) {
-    permissions_ = parent_->permissions_;
-  } else
-    permissions_ = acl;
+void File::ClearPermissions() {
+  permissions_.clear();
 }
 
 void File::CopyPermissionsFromParent() {
@@ -77,7 +73,7 @@ bool File::HasChildren() { return children_.size() != 0; }
 
 string File::ToString() {
   string output;
-  output += name_ += "\n";
+  output += name_ + "\n";
   for (auto iter = this->permissions_.begin(); iter != this->permissions_.end();
        ++iter) {
     output += iter->user() + "." + iter->group() + " " +

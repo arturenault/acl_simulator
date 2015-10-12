@@ -310,6 +310,11 @@ void Write(string user, string group, string filename) {
     }
 
     file = file->GetChildByName(path[i]);
+    if (!file) {
+      valid = false;
+      message = "File not found: file must be created before being written.";
+      return;
+    }
     if (!file->HasPermission(user, group, true)) {
       permitted = false;
       message = "Permission denied: cannot write to file";
@@ -324,6 +329,7 @@ File *Create(string user, string group, string filename) {
   vector<string> path;
   stringstream stream(filename);
   File *file = &root;
+  regex component_regex(kComponentPattern);
 
   getline(stream, component, '/');
 
@@ -334,6 +340,11 @@ File *Create(string user, string group, string filename) {
     while (stream.peek() != EOF) {
       getline(stream, component, '/');
       path.push_back(component);
+    }
+
+    if (path.size() == 1) {
+      permitted = false;
+      message = "Permission denied: users cannot write to the root directory";
     }
 
     /* Path.size - 1 because the last file doesn't have
@@ -361,15 +372,25 @@ File *Create(string user, string group, string filename) {
         }
       } else {
         if (!file->HasPermission(user, group, true)) {
+         // cout << file->ToString() << endl;
           permitted = false;
           message =
               "Permission denied: Write permission on the parent component is "
               "needed to create a "
               "file";
           break;
+        } else if (file->GetChildByName(path.back()) != nullptr) {
+          valid = false;
+          message = "File already exists";
+          break;
         }
       }
     }
+  }
+
+  if (!regex_match(path.back(), component_regex)) {
+    valid = false;
+    message = "Invalid component name";
   }
 
   File *new_file = &file->AddChild(path.back());
@@ -509,9 +530,13 @@ void Acl(string user, string group, string filename) {
 
   File file_backup = *file;
 
+  file->ClearPermissions();
   ProcessAcl(*file);
-
+  
   if (!valid || !permitted) *file = file_backup;
+  else if (!file->HasPermissions()) {
+    file->CopyPermissionsFromParent();
+  }
 }
 
 void ProcessAcl(File &new_file) {
@@ -521,7 +546,7 @@ void ProcessAcl(File &new_file) {
 
   getline(cin, line);
 
-  while (line != ".") {
+  while (line != "." && !cin.eof()) {
     string user, group, permissions;
     if (valid && permitted) {
       stringstream stream(line);
