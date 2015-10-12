@@ -11,7 +11,7 @@
 using namespace std;
 
 File root("");
-bool valid;
+bool valid, permitted;
 string message;
 
 const int kMaxComponentLength = 16;
@@ -19,6 +19,7 @@ const int kMaxFilenameLength = 256;
 const string kNamePattern = "[a-z]+";
 const string kComponentPattern =
     "[a-z\\.]{1," + to_string(kMaxComponentLength) + "}";
+const string kPermissionPattern = "^(r|w|rw|-)$";
 
 unordered_map<string, unordered_set<string>> users;
 unordered_map<string, unordered_set<string>> groups;
@@ -29,7 +30,7 @@ int main() {
   int line_no = 1;
 
   /* Create initial folders */
-  root.AddChild("home").AddPermission("*", "*", true, true);
+  root.AddChild("home").AddPermission("*", "*", true, false);
   root.AddChild("tmp").AddPermission("*", "*", true, true);
 
   getline(cin, line);
@@ -52,8 +53,9 @@ int main() {
 
   line_no = 1;
   while (!getline(cin, line).eof()) {
-    cout << line_no++ << "\tY\t" << line << endl;
-    // Do command stuff
+    ProcessCommand(line);
+    cout << line_no++ << (valid ? permitted ? "\tY\t" : "\tN\t" : "\tX\t")
+         << line << endl;
   }
 }
 
@@ -109,6 +111,27 @@ void ProcessUserDeclaration(string declaration) {
     } else {
       FindFile(filename)->AddPermission(user, group, true, true);
     }
+  }
+}
+
+void ProcessCommand(string line) {
+  string operation, user, group, filename;
+  stringstream stream(line);
+
+  getline(stream, operation, ' ');
+  getline(stream, user, '.');
+  getline(stream, group, ' ');
+  getline(stream, filename);
+
+  if (operation == "READ") {
+  } else if (operation == "WRITE") {
+  } else if (operation == "CREATE") {
+  } else if (operation == "DELETE") {
+  } else if (operation == "ACL") {
+  } else {
+    valid = false;
+    message = "Invalid operation";
+    return;
   }
 }
 
@@ -186,7 +209,7 @@ File *CreateUserFile(string filename, string user, string group) {
   return next_file;
 }
 
-/* Create file as a user */
+/* User create command */
 File *Create(string user, string group, string filename) {
   string component;
   vector<string> path;
@@ -238,5 +261,63 @@ File *Create(string user, string group, string filename) {
     }
   }
 
-  return &file->AddChild(path[i]);
+  File new_file(path[i]);
+
+  ProcessAcl(new_file);
+
+  if (valid) return &file->AddChild(new_file);
+  else return nullptr;
+}
+
+void ProcessAcl(File &new_file) {
+  string line, user, group, permissions;
+  regex name_regex(kNamePattern), permission_regex(kPermissionPattern);
+  bool can_read, can_write;
+
+  getline(cin, line);
+
+  while (line != ".") {
+    stringstream stream(line);
+
+    getline(stream, user, '.');
+    getline(stream, group, ' ');
+    getline(stream, permissions);
+
+    /* User doesn't exist yet */
+    if (users[user].empty()) {
+      if (!regex_match(user, name_regex)) {
+        valid = false;
+        message = "Invalid username";
+        return;
+      }
+
+      users[user].insert(group);
+      groups[group].insert(user);
+    }
+
+    /* Group doesn't exist yet */
+    if (groups[group].empty()) {
+      if (!regex_match(group, name_regex)) {
+        valid = false;
+        message = "Invalid group name";
+        return;
+      }
+
+      users[user].insert(group);
+      groups[group].insert(user);
+    }
+
+    if (!regex_match(permissions, permission_regex)) {
+      valid = false;
+      message = "Invalid permissions";
+      return;
+    }
+
+    can_read = permissions.find('r') != string::npos;
+    can_write = permissions.find('w') != string::npos;
+
+    new_file.AddPermission(user, group, can_read, can_write);
+
+    getline(cin, line);
+  }
 }

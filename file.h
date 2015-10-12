@@ -11,7 +11,10 @@ class File {
 
  public:
   File(string name);
+
   File& AddChild(string name);
+  File& AddChild(File& file);
+
   File* GetChildByName(string name);
 
   string name();

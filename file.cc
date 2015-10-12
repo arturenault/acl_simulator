@@ -8,6 +8,11 @@ File& File::AddChild(string name) {
   return this->children_.back();
 }
 
+File& File::AddChild(File& file) {
+  this->children_.push_back(file);
+  return this->children_.back();
+}
+
 File* File::GetChildByName(string name) {
   for (auto iter = this->children_.begin(); iter != this->children_.end();
        iter++) {
